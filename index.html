@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>HARIN.exe — 1인칭 멘헤라 연애</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="desktop-stage">
+    <!-- Mobile Form Factor Frame -->
+    <div class="mobile-device" id="mobileDevice">
+      <!-- Top Status Bar + Compact HUD -->
+      <header class="mobile-hud">
+        <div class="hud-top-row">
+          <span class="location-pill" id="locationPill">☕ 성수동 카페거리</span>
+          <div class="hud-mini-actions">
+            <button class="mini-btn" id="charSelectBtn" title="캐릭터 선택">👧</button>
+            <button class="mini-btn" id="moveSceneBtn" title="장소 이동">📍</button>
+            <button class="mini-btn" id="dexBtn" title="엔딩 도감">🏆<span id="endingCount">0</span></button>
+            <button class="mini-btn" id="settingsBtn" title="AI 설정">⚙️</button>
+            <button class="mini-btn" id="resetBtn" title="새 게임">↺</button>
+          </div>
+        </div>
+
+        <div class="hud-gauges">
+          <div class="hud-gauge">
+            <span>💕 애정 <strong id="affectionVal">55</strong></span>
+            <div class="gauge-track"><div class="gauge-fill affection" id="affectionBar" style="width:55%"></div></div>
+          </div>
+          <div class="hud-gauge">
+            <span>⚡ 불안 <strong id="anxietyVal">35</strong></span>
+            <div class="gauge-track"><div class="gauge-fill anxiety" id="anxietyBar" style="width:35%"></div></div>
+          </div>
+          <span class="mood-badge" id="moodBadge">평온함</span>
+        </div>
+
+        <!-- Swipe Hint / Page Switcher -->
+        <div class="swipe-nav">
+          <button class="swipe-pill" id="goPhoneBtn">
+            ◀ 📱 폰 <span class="badge hidden" id="phoneBadge">1</span>
+          </button>
+          <button class="swipe-pill exclusive-btn" id="exclusiveRoomBtn" title="캐릭터 방으로 이동">
+            🏠 하린의 방
+          </button>
+          <button class="swipe-pill exclusive-btn" id="exclusiveLivingBtn" title="캐릭터 거실로 이동">
+            🛋️ 거실
+          </button>
+          <button class="swipe-pill hidden" id="goEncounterBtn">
+            💕 만남으로 돌아가기 (왼쪽 스와이프) ▶
+          </button>
+        </div>
+      </header>
+
+      <!-- Horizontal Swipe Viewport: [0: Smartphone] | [1: Encounter (Default)] -->
+      <div class="swipe-viewport" id="swipeViewport">
+        <div class="swipe-track" id="swipeTrack">
+          <!-- PAGE 0: SMARTPHONE -->
+          <section class="page page-phone" id="pagePhone">
+            <!-- Phone Home Screen -->
+            <div class="phone-screen" id="phoneHome">
+              <div class="home-wallpaper">
+                <div class="home-clock" id="homeClock">23:42</div>
+                <div class="home-date" id="statusMsg">"나만의 햇살 ☀️"</div>
+              </div>
+
+              <div class="app-grid">
+                <button class="app-icon active-app" id="openChatAppBtn">
+                  <span class="app-glyph">💬</span>
+                  <span class="app-name">하린톡</span>
+                  <span class="app-dot hidden" id="chatAppDot">1</span>
+                </button>
+                <button class="app-icon locked-app" data-app="그램 (스토리/뒷계)">
+                  <span class="app-glyph">📸</span>
+                  <span class="app-name">그램</span>
+                  <span class="soon-tag">SOON</span>
+                </button>
+                <button class="app-icon locked-app" data-app="음성 통화">
+                  <span class="app-glyph">📞</span>
+                  <span class="app-name">전화</span>
+                  <span class="soon-tag">SOON</span>
+                </button>
+                <button class="app-icon locked-app" data-app="선물하기">
+                  <span class="app-glyph">🎁</span>
+                  <span class="app-name">선물</span>
+                  <span class="soon-tag">SOON</span>
+                </button>
+              </div>
+
+              <div class="home-hint" id="homeHint">
+                지금은 <strong>하린톡</strong>만 사용할 수 있습니다. (추후 앱 추가 예정)
+              </div>
+            </div>
+
+            <!-- Chat App View -->
+            <div class="phone-screen hidden" id="phoneChatApp">
+              <div class="chat-app-bar">
+                <button class="back-btn" id="backToHomeBtn">‹ 홈</button>
+                <div class="chat-peer">
+                  <strong>유하린</strong>
+                  <small id="chatIdlePill">온라인</small>
+                </div>
+                <span class="engine-mini" id="engineModeLabel">로컬</span>
+              </div>
+
+              <div class="chat-body" id="chatBody">
+                <div class="date-divider">오늘 · 23:42</div>
+              </div>
+
+              <div class="typing-bar hidden" id="typingBar">
+                <span class="typing-dots"><i></i><i></i><i></i></span>
+                <span>유하린이 입력 중...</span>
+              </div>
+
+              <div class="quick-chips" id="quickChips">
+                <button class="chip" data-text="방금 씻고 나왔어ㅠ 보고 싶었어">방금 씻고 나왔어ㅠ</button>
+                <button class="chip" data-text="나 너밖에 없어 진짜야">나 너밖에 없어</button>
+                <button class="chip" data-text="응 바빠서 나중에">응 바빠서</button>
+              </div>
+
+              <div class="chat-input-area">
+                <input type="text" id="msgInput" placeholder="카톡 답장하기..." autocomplete="off" />
+                <button id="sendBtn">전송</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- PAGE 1: 1ST-PERSON ENCOUNTER (DEFAULT) -->
+          <section class="page page-encounter" id="pageEncounter">
+            <img class="scene-bg-img" id="sceneBgImg" src="assets/bg-seongsu.jpg" alt="배경" />
+            <div class="scene-vignette"></div>
+
+            <!-- Speech Bubble above/beside Harin -->
+            <div class="speech-bubble-wrap">
+              <div class="speech-bubble" id="speechBubble">
+                <span class="speaker-tag">유하린</span>
+                <p id="vnText">오빠, 방금 나 말고 다른 생각 했지? 눈빛이 잠깐 흔들렸는데.</p>
+              </div>
+            </div>
+
+            <!-- Anime Standing Sprite -->
+            <div class="character-standing-wrap">
+              <img
+                class="character-sprite"
+                id="characterSprite"
+                src="assets/harin-normal.png"
+                alt="유하린"
+              />
+            </div>
+
+            <!-- Bottom 1st-Person Controls -->
+            <div class="encounter-controls">
+              <div class="vn-choices" id="vnChoices"></div>
+              <div class="vn-input-row">
+                <input
+                  type="text"
+                  id="sceneInput"
+                  placeholder="직접 말하거나 행동하기..."
+                  autocomplete="off"
+                />
+                <button id="sceneSendBtn">전송</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Home Indicator Bar -->
+      <div class="device-home-bar"></div>
+    </div>
+  </div>
+
+  <!-- Character Picker Modal -->
+  <div class="modal-backdrop hidden" id="charModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>👧 상대 캐릭터 선택 (5명)</h3>
+        <button class="icon-btn" id="closeCharBtn">✕</button>
+      </div>
+      <div class="ending-list" id="charList"></div>
+    </div>
+  </div>
+
+  <!-- Location Picker Modal -->
+  <div class="modal-backdrop hidden" id="locationModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📍 장소 이동</h3>
+        <button class="icon-btn" id="closeLocationBtn">✕</button>
+      </div>
+      <div class="ending-list" id="locationList"></div>
+    </div>
+  </div>
+
+  <!-- Ending Overlay -->
+  <div class="modal-backdrop hidden" id="endingOverlay">
+    <div class="ending-card">
+      <div class="ending-tag" id="endingTag">ENDING</div>
+      <h2 id="endingTitle">엔딩 제목</h2>
+      <p id="endingDesc">엔딩 설명</p>
+      <button class="primary-btn" id="endingRestartBtn">다시 시작하기</button>
+    </div>
+  </div>
+
+  <!-- Ending Dex Modal -->
+  <div class="modal-backdrop hidden" id="dexModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🏆 엔딩 도감</h3>
+        <button class="icon-btn" id="closeDexBtn">✕</button>
+      </div>
+      <div class="ending-list" id="endingList">
+        <div class="ending-slot" data-id="true">🔒 트루 엔딩: 둘만의 우주</div>
+        <div class="ending-slot" data-id="obsess">🔒 집착 엔딩: 영원히 내 거</div>
+        <div class="ending-slot" data-id="block">🔒 배드 엔딩: 차단된 사용자</div>
+        <div class="ending-slot" data-id="tired">🔒 배드 엔딩: 지쳐버린 새벽</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop hidden" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ AI 엔진 설정</h3>
+        <button class="icon-btn" id="closeSettingsBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>동작 모드</span>
+          <select id="modeSelect">
+            <option value="local">로컬 시뮬레이터 (API 키 불필요 · 0원)</option>
+            <option value="llm">실제 AI 자유 채팅/만남 (OpenAI 호환 API)</option>
+          </select>
+        </label>
+        <div id="llmFields" class="llm-fields hidden">
+          <div class="preset-row">
+            <button type="button" class="preset-btn" data-preset="zai">Z.ai (GLM-Flash)</button>
+            <button type="button" class="preset-btn" data-preset="groq">Groq (Qwen)</button>
+            <button type="button" class="preset-btn" data-preset="openrouter">OpenRouter (:free)</button>
+            <button type="button" class="preset-btn" data-preset="ollama">로컬 Ollama</button>
+          </div>
+          <label class="field">
+            <span>API Base URL</span>
+            <input type="text" id="apiBaseInput" placeholder="https://api.groq.com/openai/v1" />
+          </label>
+          <label class="field">
+            <span>Model Name</span>
+            <input type="text" id="modelInput" placeholder="qwen/qwen3-32b" />
+          </label>
+          <label class="field">
+            <span>API Key (Ollama는 비워도 됨)</span>
+            <input type="password" id="apiKeyInput" placeholder="sk-... 또는 gsk_..." />
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="saveSettingsBtn">저장하고 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+  <script>
+    (function () {
+      let ver = null;
+      setInterval(async () => {
+        try {
+          const res = await fetch('/__dev_version', { cache: 'no-store' });
+          const next = await res.text();
+          if (ver && next !== ver) location.reload();
+          ver = next;
+        } catch {}
+      }, 700);
+    })();
+  </script>
+</body>
+</html>

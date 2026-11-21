@@ -1,0 +1,7 @@
+.DS_Store
+.backups/
+__pycache__/
+*.pyc
+scripts/build_all_assets
+scripts/cutout
+assets/combos/

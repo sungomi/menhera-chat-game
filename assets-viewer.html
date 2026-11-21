@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HARIN.exe · Asset Console</title>
+  <style>
+    :root {
+      --bg: #0a0810; --panel: #13101a; --panel-2: #1b1624; --line: rgba(255,255,255,0.08);
+      --pink: #ff4fa3; --purple: #9b5de5; --text: #f3eefa; --muted: #9488a8;
+      --ok: #3ddc97; --warn: #ffb547; --err: #ff4d6a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif; font-size: 13px; height: 100vh; overflow: hidden; }
+    button, select, input { font: inherit; color: inherit; }
+    .hidden { display: none !important; }
+
+    /* Layout */
+    .app { display: grid; grid-template-columns: 232px 1fr; grid-template-rows: 52px 1fr; height: 100vh; }
+    .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .brand { font-weight: 800; font-size: 14px; color: #ffd4eb; white-space: nowrap; }
+    .brand small { color: var(--muted); font-weight: 500; margin-left: 6px; }
+    .topbar .spacer { flex: 1; }
+    .seg { display: flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 2px; max-width: 54vw; overflow-x: auto; scrollbar-width: none; }
+    .seg::-webkit-scrollbar { display: none; }
+    .seg button { background: none; border: none; padding: 5px 10px; border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .seg button.on { background: var(--pink); color: #fff; font-weight: 700; }
+    .label-sm { font-size: 11px; color: var(--muted); }
+    .link-btn { text-decoration: none; background: var(--panel-2); border: 1px solid var(--pink); padding: 6px 11px; border-radius: 8px; font-size: 12px; color: #fff; }
+
+    .sidebar { border-right: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 12px 10px; }
+    .nav-group { margin-bottom: 16px; }
+    .nav-title { font-size: 10px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; padding: 0 8px 6px; }
+    .nav-item { width: 100%; display: flex; align-items: center; gap: 8px; background: none; border: 1px solid transparent; padding: 8px 9px; border-radius: 9px; cursor: pointer; text-align: left; }
+    .nav-item:hover { background: var(--panel-2); }
+    .nav-item.on { background: rgba(255,79,163,0.14); border-color: rgba(255,79,163,0.4); }
+    .nav-item img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: top; background: #2a2233; }
+    .nav-item .nm { flex: 1; min-width: 0; }
+    .nav-item .nm b { display: block; font-size: 13px; }
+    .nav-item .nm span { font-size: 11px; color: var(--muted); }
+    .pill { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; }
+    .pill.ok { background: rgba(61,220,151,0.15); color: var(--ok); }
+    .pill.warn { background: rgba(255,181,71,0.15); color: var(--warn); }
+    .pill.err { background: rgba(255,77,106,0.15); color: var(--err); }
+
+    .main { overflow-y: auto; padding: 20px 24px 60px; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .page-head h1 { font-size: 20px; }
+    .page-head p { color: var(--muted); margin-top: 3px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+    .card-pad { padding: 16px; }
+    h3.sec { font-size: 13px; color: var(--pink); margin: 22px 0 10px; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .stat { padding: 14px; }
+    .stat b { font-size: 22px; display: block; }
+    .stat span { color: var(--muted); font-size: 11px; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: 11px; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+    tr.clickable { cursor: pointer; }
+    tr.clickable:hover td { background: rgba(255,255,255,0.025); }
+    td .thumb { width: 36px; height: 46px; object-fit: contain; border-radius: 6px; }
+    td.mono, .mono { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #c4a8f5; }
+
+    /* Backgrounds for previews */
+    .bg-checker { background-color: #262626; background-image: linear-gradient(45deg,#333 25%,transparent 25%),linear-gradient(-45deg,#333 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#333 75%),linear-gradient(-45deg,transparent 75%,#333 75%); background-size: 18px 18px; background-position: 0 0,0 9px,9px -9px,-9px 0; }
+    .bg-dark { background: #050308; }
+    .bg-white { background: #ffffff; }
+    .bg-img { background-size: cover; background-position: center; }
+
+    /* Character page */
+    .profile { display: grid; grid-template-columns: 180px 1fr; gap: 18px; padding: 16px; transition: all .18s ease; }
+    .profile.only-bg { grid-template-columns: 1fr; border-color: rgba(255,79,163,0.45); background: linear-gradient(180deg, rgba(255,79,163,0.06), var(--panel)); }
+    .profile .portrait { height: 220px; border-radius: 12px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+    .profile .portrait img { max-height: 100%; max-width: 100%; object-fit: contain; }
+    .desc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .desc-head-title { font-size: 13px; font-weight: 700; color: #ffd4eb; display: flex; align-items: center; gap: 8px; }
+    .toggle-wrap { display: inline-flex; align-items: center; gap: 8px; background: var(--panel-2); border: 1px solid rgba(255,79,163,0.4); padding: 6px 12px; border-radius: 999px; cursor: pointer; user-select: none; font-size: 12px; font-weight: 700; color: var(--text); transition: all .15s ease; }
+    .toggle-wrap:hover { border-color: var(--pink); background: rgba(255,79,163,0.14); }
+    .toggle-wrap.on { background: rgba(255,79,163,0.22); border-color: var(--pink); color: #fff; box-shadow: 0 0 0 2px rgba(255,79,163,0.18); }
+    .toggle-switch { width: 32px; height: 18px; border-radius: 999px; background: rgba(255,255,255,0.18); position: relative; transition: background .15s ease; flex-shrink: 0; }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform .15s ease; }
+    .toggle-wrap.on .toggle-switch { background: var(--pink); }
+    .toggle-wrap.on .toggle-switch::after { transform: translateX(14px); }
+    .kv { display: grid; grid-template-columns: 92px 1fr; gap: 6px 12px; font-size: 12px; line-height: 1.5; }
+    .kv dt { color: var(--muted); }
+    .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+    .tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255,79,163,0.12); color: #ffd1e8; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 18px 0 14px; }
+    .tabs button { background: none; border: none; padding: 9px 14px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+    .tabs button.on { color: #fff; border-bottom-color: var(--pink); font-weight: 700; }
+
+    /* Top Studio Dock */
+    .studio-dock { margin-bottom: 22px; border-color: rgba(255,79,163,0.32); overflow: hidden; }
+    .studio-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: linear-gradient(90deg, rgba(255,79,163,0.12), rgba(155,93,229,0.08)); border-bottom: 1px solid var(--line); cursor: pointer; }
+    .studio-dock.collapsed .studio-bar { border-bottom: none; }
+    .studio-bar-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: #ffd8ec; }
+    .studio-bar-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-w, 200px), 1fr)); gap: 12px; }
+    .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color .15s; }
+    .tile:hover { border-color: rgba(255,79,163,0.5); }
+    .tile .pv { height: calc(var(--card-w, 200px) * 1.25); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; position: relative; }
+    .tile .pv img { max-height: 97%; max-width: 97%; object-fit: contain; }
+    .tile .pv.cover img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; }
+    .tile .pv .qa { position: absolute; top: 8px; right: 8px; }
+    .tile .meta { padding: 10px 11px; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+    .tile .meta b { color: #fff; font-size: 12px; }
+
+    .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 12px; }
+    .slot .pv { height: 240px; }
+    .slot .slot-key { font-family: ui-monospace, Menlo, monospace; color: var(--pink); font-size: 12px; }
+
+    /* Composer */
+    .composer { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 18px; }
+    .phone { width: 300px; height: 533px; border-radius: 26px; border: 2px solid rgba(255,79,163,0.45); overflow: hidden; position: relative; }
+    .phone .spr { position: absolute; left: 50%; bottom: 0; transform-origin: bottom center; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 18px rgba(0,0,0,.6)); }
+    .phone .bubble { position: absolute; top: 16px; left: 14px; right: 14px; background: rgba(255,255,255,.95); color: #1c1324; border: 2px solid var(--pink); border-radius: 14px; padding: 9px 11px; font-size: 12px; font-weight: 600; z-index: 3; }
+    .phone .bubble small { display: block; color: var(--pink); font-weight: 800; font-size: 10px; margin-bottom: 2px; }
+    .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-content: start; }
+    .field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--muted); }
+    .field select, .field input[type=text] { background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; font-size: 13px; outline: none; }
+    .field input[type=range] { accent-color: var(--pink); }
+    .code { grid-column: 1 / -1; background: #0d0a13; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #c4a8f5; white-space: pre; overflow-x: auto; }
+
+    /* Lightbox */
+    .lb { position: fixed; inset: 0; background: rgba(5,3,8,.88); backdrop-filter: blur(6px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .lb-inner { display: grid; grid-template-columns: minmax(280px, 460px) 300px; gap: 18px; max-height: 92vh; }
+    .lb-pv { height: min(80vh, 640px); border-radius: 14px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+    .lb-pv img { max-height: 100%; max-width: 100%; object-fit: contain; }
+    .lb-side { display: flex; flex-direction: column; gap: 12px; }
+    .btn { background: var(--panel-2); border: 1px solid var(--line); padding: 8px 12px; border-radius: 9px; cursor: pointer; font-size: 12px; }
+    .btn:hover { border-color: var(--pink); }
+    .btn.primary { background: linear-gradient(135deg, var(--pink), var(--purple)); border: none; font-weight: 700; }
+    .empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">🛠️ HARIN.exe <small>Asset Console</small></div>
+      <div class="spacer"></div>
+      <span class="label-sm">미리보기 배경</span>
+      <div class="seg" id="bgSeg"></div>
+      <span class="label-sm">카드 크기</span>
+      <input type="range" id="sizeRange" min="150" max="320" value="200" style="accent-color:var(--pink);width:90px;" />
+      <a class="link-btn" href="index.html">🎮 게임</a>
+    </header>
+
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
+
+  <div class="lb hidden" id="lightbox"></div>
+
+  <script type="module">
+    import { CHARACTERS } from './src/characters.js';
+    import { SCENES } from './src/scenes.js';
+
+    /* ---------- Data model ---------- */
+    const PREVIEW_BGS = [
+      { id: 'checker', label: '체크', cls: 'bg-checker', topbar: true },
+      { id: 'dark', label: '다크', cls: 'bg-dark', topbar: true },
+      { id: 'white', label: '화이트', cls: 'bg-white', topbar: true },
+      ...Object.values(SCENES).map((s) => ({ id: `scene:${s.id}`, label: s.title.split(' ')[0], img: s.bgImage, topbar: true })),
+      ...Object.values(CHARACTERS).flatMap((ch) =>
+        (ch.exclusiveSpaces || [ch.exclusiveRoom]).map((sp) => ({
+          id: `space:${ch.id}:${sp.id}`,
+          label: `${ch.name} ${sp.kind || '공간'}`,
+          img: sp.bgImage,
+          topbar: false,
+        }))
+      ),
+    ];
+    const EXPRESSIONS = [
+      { key: 'normal', label: '평온' },
+      { key: 'happy', label: '애정 폭발' },
+      { key: 'pout', label: '삐짐/의심' },
+      { key: 'anxious', label: '불안 발작' },
+      { key: 'yandere', label: '얀데레 각성' },
+      { key: 'shy', label: '심쿵 클로즈업' },
+      { key: 'casual', label: '방/안경 데일리' },
+      { key: 'lounge', label: '거실 라운지' },
+      { key: 'date', label: '데이트 룩' },
+      { key: 'night', label: '야간 네온 룩' },
+    ];
+
+    function buildAssets() {
+      const list = [];
+      Object.values(CHARACTERS).forEach((ch) => {
+        ch.variants.forEach((v) =>
+          list.push({ type: 'sprite', ownerId: ch.id, owner: ch.name, label: v.label, file: v.file, meta: v })
+        );
+        (ch.exclusiveSpaces || [ch.exclusiveRoom]).forEach((sp) =>
+          list.push({
+            type: 'room',
+            ownerId: ch.id,
+            owner: ch.name,
+            label: `${sp.kind === '거실' ? '🛋️' : '🏠'} ${sp.title}`,
+            file: sp.bgImage,
+            space: sp,
+          })
+        );
+      });
+      Object.values(SCENES).forEach((s) =>
+        list.push({ type: 'scene', ownerId: null, owner: '공용', label: s.label, file: s.bgImage })
+      );
+      return list;
+    }
+    const ASSETS = buildAssets();
+
+    /* ---------- Persisted UI state (survives live-reload) ---------- */
+    const KEY = 'asset_console_state_v1';
+    const state = Object.assign(
+      { view: 'qa', charId: 'harin', tab: 'sprites', onlyExclusiveBg: false, studioCollapsed: false, bg: 'checker', size: 200,
+        comp: { bg: 'scene:seongsu', charId: 'harin', file: 'assets/harin-normal.png', text: '오빠, 방금 나 말고 다른 생각 했지?', scale: 100, offset: 0 } },
+      JSON.parse(localStorage.getItem(KEY) || '{}')
+    );
+    if (!PREVIEW_BGS.some((b) => b.id === state.bg)) state.bg = 'checker';
+    if (!PREVIEW_BGS.some((b) => b.id === state.comp?.bg)) state.comp.bg = 'scene:seongsu';
+    const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+
+    const bgDef = (id) => PREVIEW_BGS.find((b) => b.id === id) || PREVIEW_BGS[0];
+    const bgAttrs = (id) => {
+      const b = bgDef(id);
+      return b.img ? `class="bg-img" style="background-image:url('${b.img}')"` : `class="${b.cls}"`;
+    };
+    const applyBg = (node, id) => {
+      const b = bgDef(id);
+      node.classList.remove('bg-checker', 'bg-dark', 'bg-white', 'bg-img');
+      node.style.backgroundImage = '';
+      if (b.img) { node.classList.add('bg-img'); node.style.backgroundImage = `url('${b.img}')`; }
+      else node.classList.add(b.cls);
+    };
+
+    /* ---------- Image QA (exists / size / transparency / halo) ---------- */
+    const qaCache = new Map();
+    function inspect(file, checkAlpha) {
+      if (qaCache.has(file)) return qaCache.get(file);
+      const p = new Promise((resolve) => {
+        const load = (attempt) => {
+          const img = new Image();
+          img.onload = () => {
+            const r = { exists: true, w: img.naturalWidth, h: img.naturalHeight, alpha: null, halo: null };
+            if (checkAlpha) {
+              const c = document.createElement('canvas');
+              c.width = img.naturalWidth; c.height = img.naturalHeight;
+              const ctx = c.getContext('2d', { willReadFrequently: true });
+              ctx.drawImage(img, 0, 0);
+              const d = ctx.getImageData(0, 0, c.width, c.height).data;
+              const at = (x, y) => d[(y * c.width + x) * 4 + 3];
+              r.alpha = [at(2, 2), at(c.width - 3, 2), at(2, c.height - 3), at(c.width - 3, c.height - 3)].every((a) => a < 10);
+              let edge = 0, bright = 0;
+              for (let i = 0; i < d.length; i += 4 * 3) {
+                const a = d[i + 3];
+                if (a > 15 && a < 240) {
+                  edge++;
+                  if (d[i] > 225 && d[i + 1] > 225 && d[i + 2] > 225) bright++;
+                }
+              }
+              r.halo = edge ? bright / edge : 0;
+            }
+            resolve(r);
+          };
+          img.onerror = () => {
+            if (attempt < 2) setTimeout(() => load(attempt + 1), 120 * (attempt + 1));
+            else resolve({ exists: false });
+          };
+          img.src = attempt === 0 ? file : `${file}?r=${attempt}`;
+        };
+        load(0);
+      });
+      qaCache.set(file, p);
+      return p;
+    }
+    function qaLevel(r, isSprite) {
+      if (!r.exists) return { cls: 'err', txt: '파일 없음' };
+      if (isSprite && !r.alpha) return { cls: 'err', txt: '투명 아님' };
+      if (isSprite && r.halo > 0.12) return { cls: 'warn', txt: `헤일로 ${(r.halo * 100).toFixed(0)}%` };
+      return { cls: 'ok', txt: 'OK' };
+    }
+    function missingExpressions(ch) {
+      return EXPRESSIONS.filter((e) => e.key !== 'normal' && ch.sprites[e.key] === ch.sprites.normal).map((e) => e.label);
+    }
+
+    /* ---------- Topbar ---------- */
+    const bgSeg = document.getElementById('bgSeg');
+    function renderBgSeg() {
+      bgSeg.innerHTML = PREVIEW_BGS.filter((b) => b.topbar).map((b) => `<button data-bg="${b.id}" class="${state.bg === b.id ? 'on' : ''}">${b.label}</button>`).join('');
+    }
+    bgSeg.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      state.bg = b.dataset.bg; save(); renderBgSeg();
+      document.querySelectorAll('[data-pv]').forEach((n) => applyBg(n, state.bg));
+    });
+    const sizeRange = document.getElementById('sizeRange');
+    sizeRange.value = state.size;
+    document.documentElement.style.setProperty('--card-w', `${state.size}px`);
+    sizeRange.addEventListener('input', () => {
+      state.size = +sizeRange.value; save();
+      document.documentElement.style.setProperty('--card-w', `${state.size}px`);
+    });
+
+    /* ---------- Sidebar ---------- */
+    const sidebar = document.getElementById('sidebar');
+    function renderSidebar() {
+      const navBtn = (view, icon, label, sub = '', extra = '') =>
+        `<button class="nav-item ${state.view === view && view !== 'char' ? 'on' : ''}" data-view="${view}">
+           <span style="width:28px;text-align:center;font-size:16px">${icon}</span>
+           <span class="nm"><b>${label}</b>${sub ? `<span>${sub}</span>` : ''}</span>${extra}
+         </button>`;
+      sidebar.innerHTML = `
+        <div class="nav-group">
+          <div class="nav-title">Overview</div>
+          ${navBtn('qa', '📊', 'QA 대시보드', `에셋 ${ASSETS.length}개`)}
+          ${navBtn('composer', '🧩', '에셋 조합 스튜디오', '배경+캐릭터 합성')}
+          ${navBtn('scenes', '🏙️', '배경', `공용 ${Object.keys(SCENES).length} + 전용 ${ASSETS.filter((a) => a.type === 'room').length}`)}
+        </div>
+        <div class="nav-group">
+          <div class="nav-title">Characters</div>
+          ${Object.values(CHARACTERS).map((ch) => {
+            const miss = missingExpressions(ch).length;
+            return `<button class="nav-item ${state.view === 'char' && state.charId === ch.id ? 'on' : ''}" data-view="char" data-char="${ch.id}">
+              <img src="${ch.sprites.normal}" alt="" />
+              <span class="nm"><b>${ch.name} <small style="color:var(--muted);font-weight:400">${ch.age}</small></b><span>착장 ${ch.variants.length}</span></span>
+              <span class="pill ${miss ? 'warn' : 'ok'}">${miss ? `표정 -${miss}` : '완료'}</span>
+            </button>`;
+          }).join('')}
+        </div>`;
+    }
+    sidebar.addEventListener('click', (e) => {
+      const b = e.target.closest('.nav-item'); if (!b) return;
+      state.view = b.dataset.view;
+      if (state.view === 'composer') state.studioCollapsed = false;
+      if (b.dataset.char) { state.charId = b.dataset.char; if (state.onlyExclusiveBg) state.tab = 'room'; else if (state.tab === 'room') state.tab = 'sprites'; }
+      save(); render();
+    });
+
+    /* ---------- Top Asset Combination Studio ---------- */
+    function studioDockHTML(forceExpanded = false) {
+      const collapsed = !forceExpanded && state.studioCollapsed;
+      const c = state.comp;
+      const bgOptions = PREVIEW_BGS.map((b) => `<option value="${b.id}" ${c.bg === b.id ? 'selected' : ''}>${b.label}${b.img ? ` · ${b.img}` : ''}</option>`).join('');
+      return `
+        <section class="card studio-dock ${collapsed ? 'collapsed' : ''}" id="studioDock">
+          <div class="studio-bar" data-toggle-studio="1">
+            <div class="studio-bar-title">
+              <span>🧩 에셋 조합 스튜디오</span>
+              <span class="studio-bar-sub">9:16 실시간 합성 · 배경 대조(17종+체크/다크/화이트) · 캐릭터/착장/말풍선 테스트</span>
+            </div>
+            ${forceExpanded ? '<span class="pill ok">전체 보기</span>' : `<button type="button" class="btn" style="padding:4px 10px;font-size:11px">${collapsed ? '펼치기 ▼' : '접기 ▲'}</button>`}
+          </div>
+          ${collapsed ? '' : `
+          <div class="composer">
+            <div class="phone" id="cPhone">
+              <div class="bubble" id="cBubble"><small id="cName"></small><span id="cText"></span></div>
+              <img class="spr" id="cSprite" />
+            </div>
+            <div class="form">
+              <label class="field"><span>배경 (공용 7 + 전용 10 + 대조용 3)</span><select id="cBg">${bgOptions}</select></label>
+              <label class="field"><span>캐릭터</span><select id="cChar">
+                <option value="">없음 (배경만 보기)</option>
+                ${Object.values(CHARACTERS).map((x) => `<option value="${x.id}" ${c.charId === x.id ? 'selected' : ''}>${x.name} (${x.age}세)</option>`).join('')}
+              </select></label>
+              <label class="field"><span>착장 / 표정 바리에이션 (10종)</span><select id="cVar"></select></label>
+              <label class="field"><span>말풍선 대사 (비우면 숨김)</span><input type="text" id="cTxt" value="${c.text.replace(/"/g, '&quot;')}" /></label>
+              <label class="field"><span>스프라이트 크기 <b id="cScaleV"></b></span><input type="range" id="cScale" min="50" max="150" value="${c.scale}" /></label>
+              <label class="field"><span>세로 위치 오프셋 <b id="cOffV"></b></span><input type="range" id="cOff" min="-150" max="150" value="${c.offset}" /></label>
+              <div class="field" style="grid-column: 1 / -1">
+                <span>빠른 배경 대조 (스튜디오 + 전체 카드 동기화)</span>
+                <div class="seg" id="cQuickBg" style="max-width:100%;flex-wrap:wrap">
+                  ${PREVIEW_BGS.filter((b) => b.topbar).map((b) => `<button type="button" data-quick-bg="${b.id}" class="${c.bg === b.id ? 'on' : ''}">${b.label}</button>`).join('')}
+                </div>
+              </div>
+              <div class="code" id="cCode"></div>
+            </div>
+          </div>`}
+        </section>`;
+    }
+
+    function bindStudioControls() {
+      const $ = (id) => document.getElementById(id);
+      if (!$('cPhone')) return;
+      const fillVariants = () => {
+        const cur = CHARACTERS[state.comp.charId];
+        $('cVar').innerHTML = cur
+          ? cur.variants.map((v) => `<option value="${v.file}" ${v.file === state.comp.file ? 'selected' : ''}>${v.label}</option>`).join('')
+          : '<option value="">-</option>';
+        if (cur && !cur.variants.some((v) => v.file === state.comp.file)) state.comp.file = cur.variants[0].file;
+      };
+      const paint = () => {
+        const s = state.comp, cur = CHARACTERS[s.charId];
+        applyBg($('cPhone'), s.bg);
+        $('cSprite').classList.toggle('hidden', !cur);
+        if (cur) {
+          $('cSprite').src = s.file;
+          $('cSprite').style.height = `${70 * s.scale / 100}%`;
+          $('cSprite').style.transform = `translateX(-50%) translateY(${-s.offset}px)`;
+        }
+        $('cBubble').classList.toggle('hidden', !s.text.trim());
+        $('cName').textContent = cur ? cur.name : '';
+        $('cText').textContent = s.text;
+        $('cScaleV').textContent = `${s.scale}%`;
+        $('cOffV').textContent = `${s.offset}px`;
+        const bg = bgDef(s.bg);
+        $('cCode').textContent = JSON.stringify({ background: bg.img || bg.id, character: s.charId || null, sprite: cur ? s.file : null, bubble: s.text || null, scale: s.scale, offsetY: s.offset }, null, 2);
+        document.querySelectorAll('#cQuickBg button').forEach((btn) => btn.classList.toggle('on', btn.dataset.quickBg === s.bg));
+        save();
+      };
+      fillVariants(); paint();
+      $('cBg').onchange = (e) => { state.comp.bg = e.target.value; paint(); };
+      $('cChar').onchange = (e) => { state.comp.charId = e.target.value; fillVariants(); paint(); };
+      $('cVar').onchange = (e) => { state.comp.file = e.target.value; paint(); };
+      $('cTxt').oninput = (e) => { state.comp.text = e.target.value; paint(); };
+      $('cScale').oninput = (e) => { state.comp.scale = +e.target.value; paint(); };
+      $('cOff').oninput = (e) => { state.comp.offset = +e.target.value; paint(); };
+      $('cQuickBg')?.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-quick-bg]'); if (!b) return;
+        state.comp.bg = b.dataset.quickBg;
+        state.bg = b.dataset.quickBg;
+        $('cBg').value = state.comp.bg;
+        renderBgSeg();
+        document.querySelectorAll('[data-pv]').forEach((n) => applyBg(n, state.bg));
+        paint();
+      });
+    }
+
+    /* ---------- Views ---------- */
+    const main = document.getElementById('main');
+
+    function tileHTML(a, { cover = false } = {}) {
+      const isSprite = a.type === 'sprite';
+      return `<div class="tile" data-file="${a.file}" data-type="${a.type}">
+        <div class="pv ${cover ? 'cover' : ''}" ${isSprite ? `data-pv ${bgAttrs(state.bg)}` : ''}>
+          <img src="${a.file}" alt="${a.label}" loading="lazy" />
+          <span class="qa pill" data-qa="${a.file}">…</span>
+        </div>
+        <div class="meta">
+          <b>${a.label}</b>
+          ${a.meta ? `<span>💇 ${a.meta.hair}</span><span>👗 ${a.meta.outfit}</span>` : `<span>${a.owner}</span>`}
+          <span class="mono">${a.file}</span>
+        </div>
+      </div>`;
+    }
+    async function fillQA(root = main) {
+      root.querySelectorAll('[data-qa]').forEach(async (n) => {
+        const file = n.dataset.qa;
+        const isSprite = file.endsWith('.png');
+        const r = await inspect(file, isSprite);
+        const lv = qaLevel(r, isSprite);
+        n.className = `qa pill ${lv.cls}`;
+        n.textContent = lv.txt;
+      });
+    }
+
+    async function viewQA() {
+      const results = await Promise.all(ASSETS.map((a) => inspect(a.file, a.type === 'sprite')));
+      const levels = results.map((r, i) => qaLevel(r, ASSETS[i].type === 'sprite'));
+      const count = (c) => levels.filter((l) => l.cls === c).length;
+      const missExpr = Object.values(CHARACTERS).reduce((n, ch) => n + missingExpressions(ch).length, 0);
+
+      main.innerHTML = `
+        ${studioDockHTML(false)}
+        <div class="page-head"><div><h1>📊 QA 대시보드</h1><p>모든 에셋의 존재 여부 · 해상도 · 투명도 · 누끼 헤일로(흰 테두리 비율)를 자동 검사합니다.</p></div></div>
+        <div class="stats">
+          <div class="card stat"><b>${ASSETS.length}</b><span>전체 에셋</span></div>
+          <div class="card stat"><b style="color:var(--ok)">${count('ok')}</b><span>정상</span></div>
+          <div class="card stat"><b style="color:var(--warn)">${count('warn')}</b><span>누끼 확인 필요</span></div>
+          <div class="card stat"><b style="color:var(--err)">${count('err')}</b><span>오류 (파일 없음/불투명)</span></div>
+          <div class="card stat"><b style="color:var(--warn)">${missExpr}</b><span>미제작 표정 슬롯</span></div>
+        </div>
+
+        <h3 class="sec">⚠️ 제작 필요 목록</h3>
+        <div class="card"><table>
+          <thead><tr><th>캐릭터</th><th>미제작 표정 (normal로 대체 중)</th><th>착장 수</th></tr></thead>
+          <tbody>${Object.values(CHARACTERS).map((ch) => {
+            const m = missingExpressions(ch);
+            return `<tr class="clickable" data-goto-char="${ch.id}"><td><b>${ch.name}</b> <span class="label-sm">${ch.age}세</span></td>
+              <td>${m.length ? m.map((x) => `<span class="pill warn" style="margin-right:4px">${x}</span>`).join('') : '<span class="pill ok">모두 완료</span>'}</td>
+              <td>${ch.variants.length}</td></tr>`;
+          }).join('')}</tbody>
+        </table></div>
+
+        <h3 class="sec">🗂️ 전체 에셋 목록</h3>
+        <div class="card" style="overflow:hidden"><table>
+          <thead><tr><th></th><th>구분</th><th>소유</th><th>이름</th><th>해상도</th><th>상태</th><th>경로</th></tr></thead>
+          <tbody>${ASSETS.map((a, i) => {
+            const r = results[i], lv = levels[i];
+            const typeLabel = { sprite: '스프라이트', room: '전용 배경', scene: '공용 배경' }[a.type];
+            return `<tr class="clickable" data-open="${a.file}" data-type="${a.type}">
+              <td><img class="thumb ${a.type === 'sprite' ? 'bg-checker' : ''}" src="${a.file}" style="${a.type !== 'sprite' ? 'object-fit:cover' : ''}" /></td>
+              <td>${typeLabel}</td><td>${a.owner}</td><td>${a.label}</td>
+              <td class="mono">${r.exists ? `${r.w}×${r.h}` : '-'}</td>
+              <td><span class="pill ${lv.cls}">${lv.txt}</span></td>
+              <td class="mono">${a.file}</td></tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+      bindStudioControls();
+    }
+
+    function viewChar() {
+      const ch = CHARACTERS[state.charId] || CHARACTERS.harin;
+      const sprites = ASSETS.filter((a) => a.type === 'sprite' && a.ownerId === ch.id);
+      const spaces = ch.exclusiveSpaces || [ch.exclusiveRoom];
+      const onlyBg = !!state.onlyExclusiveBg || state.tab === 'room';
+
+      let body = '';
+      if (onlyBg) {
+        const spaceTiles = spaces.map((sp) => ({
+          type: 'room',
+          owner: ch.name,
+          label: `${sp.kind === '거실' ? '🛋️' : '🏠'} ${sp.title}`,
+          file: sp.bgImage,
+        }));
+        body = `<p class="label-sm" style="margin:14px 0 10px">✨ <b>전용 에셋 보기 활성화됨</b> — 캐릭터가 숨겨지고 <b>${ch.name}</b> 전용 배경 에셋(${spaces.length}종)만 표시됩니다.</p>
+          <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))">${spaceTiles.map((a) => tileHTML(a, { cover: true })).join('')}</div>
+          ${spaces.map((sp) => `<div class="card card-pad" style="margin-top:12px"><dl class="kv">
+            <dt>구분</dt><dd>${sp.kind || '전용 공간'} · ${sp.title}</dd>
+            <dt>버튼 라벨</dt><dd>${sp.buttonLabel}</dd>
+            <dt>기본 착장</dt><dd class="mono">${sp.spriteKey || 'casual'}</dd>
+            <dt>진입 대사</dt><dd>"${sp.intro}"</dd>
+            <dt>배경 파일</dt><dd class="mono">${sp.bgImage}</dd>
+          </dl></div>`).join('')}`;
+      } else if (state.tab === 'expr') {
+        body = `<p class="label-sm" style="margin-bottom:10px">게임은 애정/불안 수치 및 장소에 따라 아래 ${EXPRESSIONS.length}개 슬롯 중 하나를 띄웁니다. 노란 슬롯은 아직 normal 이미지로 대체 중입니다.</p>
+          <div class="slots">${EXPRESSIONS.map((e) => {
+            const file = ch.sprites[e.key];
+            const fallback = e.key !== 'normal' && file === ch.sprites.normal;
+            return `<div class="tile slot" data-file="${file}" data-type="sprite">
+              <div class="pv" data-pv ${bgAttrs(state.bg)} style="${fallback ? 'opacity:.45' : ''}"><img src="${file}" /></div>
+              <div class="meta"><span class="slot-key">sprites.${e.key}</span><b>${e.label}</b>
+                ${fallback ? '<span class="pill warn" style="align-self:flex-start">미제작 · normal 대체</span>' : '<span class="pill ok" style="align-self:flex-start">전용 이미지</span>'}
+                <span class="mono">${file}</span></div></div>`;
+          }).join('')}</div>`;
+      } else {
+        body = `<div class="grid">${sprites.map((a) => tileHTML(a)).join('')}</div>`;
+      }
+
+      main.innerHTML = `
+        ${studioDockHTML(false)}
+        <div class="page-head">
+          <div><h1>${ch.name} <span class="label-sm" style="font-size:14px">${ch.age}세 · ${ch.role}</span></h1><p>${ch.archetype}</p></div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button type="button" class="toggle-wrap ${onlyBg ? 'on' : ''}" data-toggle-exclusive="1" aria-pressed="${onlyBg}">
+              <span class="toggle-switch"></span>
+              <span>🏠 전용 에셋 보기</span>
+            </button>
+            <button class="btn primary" data-compose-char="${ch.id}">🧩 조합 스튜디오로 불러오기</button>
+          </div>
+        </div>
+        <div class="card profile ${onlyBg ? 'only-bg' : ''}">
+          ${onlyBg ? '' : `<div class="portrait" data-pv ${bgAttrs(state.bg)}><img src="${ch.sprites.normal}" /></div>`}
+          <div>
+            <div class="desc-head">
+              <div class="desc-head-title">📋 캐릭터 설명 · 프로필</div>
+              <button type="button" class="toggle-wrap ${onlyBg ? 'on' : ''}" data-toggle-exclusive="1" aria-pressed="${onlyBg}">
+                <span class="toggle-switch"></span>
+                <span>전용 에셋 보기 ${onlyBg ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
+            <dl class="kv">
+              <dt>한 줄 요약</dt><dd>${ch.summary}</dd>
+              <dt>성격</dt><dd>${ch.personality}</dd>
+              <dt>말투</dt><dd>${ch.speechStyle}</dd>
+              <dt>불안 트리거</dt><dd style="color:#ffb3c1">${ch.obsessionTrigger}</dd>
+              <dt>취향</dt><dd>${ch.likes}</dd>
+              <dt>첫 대사</dt><dd>"${ch.intro}"</dd>
+              <dt>상태메시지</dt><dd>${ch.defaultStatus}</dd>
+            </dl>
+            <div class="tags">${ch.tags.map((t) => `<span class="tag">#${t}</span>`).join('')}</div>
+          </div>
+        </div>
+        ${onlyBg ? '' : `
+        <div class="tabs">
+          <button data-tab="sprites" class="${state.tab === 'sprites' ? 'on' : ''}">👗 착장/포즈 (${sprites.length})</button>
+          <button data-tab="expr" class="${state.tab === 'expr' ? 'on' : ''}">🎭 표정 매핑 (${EXPRESSIONS.length})</button>
+          <button data-tab="room" class="${state.tab === 'room' ? 'on' : ''}">🏠 전용 에셋 (${spaces.length})</button>
+        </div>`}
+        ${body}`;
+      bindStudioControls();
+      fillQA();
+    }
+
+    function viewScenes() {
+      const scenes = ASSETS.filter((a) => a.type === 'scene');
+      const rooms = ASSETS.filter((a) => a.type === 'room');
+      main.innerHTML = `
+        ${studioDockHTML(false)}
+        <div class="page-head"><div><h1>🏙️ 배경</h1><p>공용 서울 장소 (${scenes.length}곳)와 캐릭터 전용 방·거실 배경 (${rooms.length}곳)입니다.</p></div></div>
+        <h3 class="sec" style="margin-top:0">공용 서울 장소 (${scenes.length})</h3>
+        <div class="grid">${scenes.map((a) => tileHTML(a, { cover: true })).join('')}</div>
+        <h3 class="sec">캐릭터 전용 방 · 거실 (${rooms.length})</h3>
+        <div class="grid">${rooms.map((a) => tileHTML(a, { cover: true })).join('')}</div>`;
+      bindStudioControls();
+      fillQA();
+    }
+
+    function viewComposer() {
+      main.innerHTML = `
+        <div class="page-head"><div><h1>🧩 에셋 조합 스튜디오</h1><p>게임 화면 비율(9:16)로 배경 · 캐릭터 · 착장 · 말풍선을 실시간 합성해 봅니다. 설정은 자동 저장됩니다.</p></div></div>
+        ${studioDockHTML(true)}`;
+      bindStudioControls();
+    }
+
+    /* ---------- Lightbox ---------- */
+    const lb = document.getElementById('lightbox');
+    async function openLightbox(file, type) {
+      const a = ASSETS.find((x) => x.file === file && x.type === type) || ASSETS.find((x) => x.file === file);
+      const isSprite = type === 'sprite';
+      const r = await inspect(file, isSprite);
+      const lv = qaLevel(r, isSprite);
+      let lbBg = state.bg;
+      lb.innerHTML = `
+        <div class="lb-inner">
+          <div class="lb-pv" id="lbPv" ${isSprite ? '' : 'style="background:#000"'}><img src="${file}" style="${isSprite ? '' : 'width:100%;height:100%;object-fit:cover'}" /></div>
+          <div class="lb-side card card-pad">
+            <div><b style="font-size:15px">${a?.label || file}</b><div class="label-sm" style="margin-top:3px">${a?.owner || ''}</div></div>
+            <span class="pill ${lv.cls}" style="align-self:flex-start">${lv.txt}</span>
+            <dl class="kv">
+              <dt>해상도</dt><dd class="mono">${r.exists ? `${r.w}×${r.h}` : '-'}</dd>
+              ${isSprite ? `<dt>투명 배경</dt><dd>${r.alpha ? '✅' : '❌'}</dd><dt>헤일로</dt><dd>${r.halo != null ? (r.halo * 100).toFixed(1) + '%' : '-'}</dd>` : ''}
+              ${a?.meta ? `<dt>헤어</dt><dd>${a.meta.hair}</dd><dt>메이크업</dt><dd>${a.meta.makeup}</dd><dt>착장</dt><dd>${a.meta.outfit}</dd><dt>포즈</dt><dd>${a.meta.pose}</dd>` : ''}
+              <dt>경로</dt><dd class="mono">${file}</dd>
+            </dl>
+            ${isSprite ? `<div class="seg" id="lbSeg" style="flex-wrap:wrap">${PREVIEW_BGS.map((b) => `<button data-bg="${b.id}" class="${b.id === lbBg ? 'on' : ''}">${b.label}</button>`).join('')}</div>` : ''}
+            ${isSprite && a?.ownerId ? `<button class="btn primary" id="lbCompose">🧩 조합 스튜디오로 보내기</button>` : `<button class="btn primary" id="lbUseBg">🧩 조합 스튜디오 배경으로 적용</button>`}
+            <button class="btn" id="lbClose">닫기 (Esc)</button>
+          </div>
+        </div>`;
+      lb.classList.remove('hidden');
+      if (isSprite) applyBg(document.getElementById('lbPv'), lbBg);
+      document.getElementById('lbClose').onclick = closeLightbox;
+      document.getElementById('lbSeg')?.addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        lbBg = b.dataset.bg;
+        document.querySelectorAll('#lbSeg button').forEach((x) => x.classList.toggle('on', x === b));
+        applyBg(document.getElementById('lbPv'), lbBg);
+      });
+      const cb = document.getElementById('lbCompose');
+      if (cb) cb.onclick = () => {
+        Object.assign(state.comp, { charId: a.ownerId, file });
+        state.studioCollapsed = false;
+        save(); closeLightbox(); render();
+        main.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      const ub = document.getElementById('lbUseBg');
+      if (ub) ub.onclick = () => {
+        const match = PREVIEW_BGS.find((b) => b.img === file);
+        if (match) state.comp.bg = match.id;
+        state.studioCollapsed = false;
+        save(); closeLightbox(); render();
+        main.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    }
+    const closeLightbox = () => lb.classList.add('hidden');
+    lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+    /* ---------- Main click delegation ---------- */
+    main.addEventListener('click', (e) => {
+      const studioToggle = e.target.closest('[data-toggle-studio]');
+      if (studioToggle && state.view !== 'composer') {
+        state.studioCollapsed = !state.studioCollapsed;
+        save(); return render();
+      }
+      const exToggle = e.target.closest('[data-toggle-exclusive]');
+      if (exToggle) {
+        const curOnly = !!state.onlyExclusiveBg || state.tab === 'room';
+        state.onlyExclusiveBg = !curOnly;
+        state.tab = state.onlyExclusiveBg ? 'room' : 'sprites';
+        save(); return render();
+      }
+      const tab = e.target.closest('[data-tab]');
+      if (tab) {
+        state.tab = tab.dataset.tab;
+        state.onlyExclusiveBg = state.tab === 'room';
+        save(); return render();
+      }
+      const go = e.target.closest('[data-goto-char]');
+      if (go) { state.view = 'char'; state.charId = go.dataset.gotoChar; state.onlyExclusiveBg = false; state.tab = 'expr'; save(); return render(); }
+      const comp = e.target.closest('[data-compose-char]');
+      if (comp) {
+        const ch = CHARACTERS[comp.dataset.composeChar];
+        Object.assign(state.comp, { charId: ch.id, file: ch.variants[0].file });
+        state.studioCollapsed = false;
+        save(); render();
+        main.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const t = e.target.closest('.tile, tr[data-open]');
+      if (t) openLightbox(t.dataset.file || t.dataset.open, t.dataset.type);
+    });
+
+    function render() {
+      renderSidebar();
+      renderBgSeg();
+      ({ qa: viewQA, char: viewChar, scenes: viewScenes, composer: viewComposer }[state.view] || viewQA)();
+    }
+    render();
+  </script>
+  <script>
+    (function () {
+      let ver = null;
+      setInterval(async () => {
+        try {
+          const res = await fetch('/__dev_version', { cache: 'no-store' });
+          const next = await res.text();
+          if (ver && next !== ver) location.reload();
+          ver = next;
+        } catch {}
+      }, 700);
+    })();
+  </script>
+</body>
+</html>
