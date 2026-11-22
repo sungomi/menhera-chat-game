@@ -41,3 +41,11 @@ menhera-chat-game/
     ├── build_all_assets.swift  # 캐릭터·배경 에셋 빌드 스크립트
     └── cutout.swift            # 전경 누끼 추출 유틸리티
 ```
+
+---
+
+## 제작자
+
+**sungomi** · [github.com/sungomi](https://github.com/sungomi)
+
+라이선스: [MIT License](LICENSE)
